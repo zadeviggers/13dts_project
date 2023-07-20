@@ -7,6 +7,9 @@ const int MOISTURE_SENSOR_POWER = 12;
 const int NEEDS_WATERING_INDICATOR = 13;
 const int ULTRASONIC_TRIGGER = 27;
 const int ULTRASONIC_ECHO = 26;
+const int LCD_SDA = 25;
+const int LCD_SCL = 33;
+const int LCD_POWER = 32;
 
 // Constants
 const int NEEDS_WATERING_THRESHOLD = 200;
@@ -28,6 +31,7 @@ void setup() {
   pinMode(MOISTURE_SENSOR_POWER, OUTPUT);
   pinMode(MOISTURE_SENSOR_SIGNAL, INPUT);
   pinMode(NEEDS_WATERING_INDICATOR, OUTPUT);
+  pinMode(LCD_POWER, OUTPUT);
 }
 
 void loop() {
@@ -35,6 +39,7 @@ void loop() {
   distance = distanceSensor.measureDistanceCm();
 
   digitalWrite(NEEDS_WATERING_INDICATOR, LOW);
+  digitalWrite(LCD_POWER, LOW);
 
 
   // Check threshold before measing soil mostire to slow corrosion.
@@ -51,6 +56,7 @@ void loop() {
     // Temporay LED indicator
     if (moisture < NEEDS_WATERING_THRESHOLD) {
       digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
+      digitalWrite(LCD_POWER, HIGH);
     }
   }
 
