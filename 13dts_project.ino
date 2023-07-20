@@ -1,14 +1,23 @@
+// Libraries
+#include <HCSR04.h>
+
 // Pins
 const int MOISTURE_SENSOR_SIGNAL = 14;
 const int MOISTURE_SENSOR_POWER = 12;
 const int NEEDS_WATERING_INDICATOR = 13;
+const int ULTRASONIC_TRIGGER = 27;
+const int ULTRASONIC_ECHO = 26;
 
 // Constants
 const int NEEDS_WATERING_THRESHOLD = 200;
+const int DISTANCE_THRESHOLD = 10;
 
 // Variables
 volatile int moisture = 0;
+volatile float distance = 0;
 
+// Inititalise libraries
+UltraSonicDistanceSensor distanceSensor(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO);
 
 
 void setup() {
@@ -22,24 +31,30 @@ void setup() {
 }
 
 void loop() {
-  // Turn on the soil moisture sensor
-  digitalWrite(MOISTURE_SENSOR_POWER, HIGH);
-  // Wait for 10 millisecond(s)
-  delay(10);
-  moisture = analogRead(MOISTURE_SENSOR_SIGNAL);
-  // Turn off the sensor to reduce metal corrosion over time
-  digitalWrite(MOISTURE_SENSOR_POWER, LOW);
+  // Check distance on ultrasonic
+  distance = distanceSensor.measureDistanceCm();
 
-  // For debugging
-  Serial.println(moisture);
+  digitalWrite(NEEDS_WATERING_INDICATOR, LOW);
 
-  // Temporay LED indicator
-  if (moisture < NEEDS_WATERING_THRESHOLD) {
-    digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
-  } else {
-    digitalWrite(NEEDS_WATERING_INDICATOR, LOW);
+
+  // Check threshold before measing soil mostire to slow corrosion.
+  if (distance > 0 && distance < DISTANCE_THRESHOLD) {
+
+    // Turn on the soil moisture sensor
+    digitalWrite(MOISTURE_SENSOR_POWER, HIGH);
+    // Wait for 10 millisecond(s)
+    delay(10);
+    moisture = analogRead(MOISTURE_SENSOR_SIGNAL);
+    // Turn off the sensor to reduce metal corrosion over time
+    digitalWrite(MOISTURE_SENSOR_POWER, LOW);
+
+    // Temporay LED indicator
+    if (moisture < NEEDS_WATERING_THRESHOLD) {
+      digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
+    }
   }
 
 
+  // Wait for a second
   delay(1000);
 }
