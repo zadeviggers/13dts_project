@@ -33,11 +33,11 @@ byte GRAPH_SEGMENT_SHAPE[8] = {
 int GRAPH_SEGMENT = 0;  // Chacter ID
 
 // Variables
-volatile int moisture = 0;              // Moisture sensor
-volatile float distance = 0;            // Ultrasonic sensor
-volatile int mositure_threshold = 200;  // Potentiomiter
-volatile int moisture_multiplier = 1;   // Potentiomiter
-volatile int moisture_offset = 0;       // Potentiomiter
+volatile int moisture = 0;             // Moisture sensor
+volatile float distance = 0;           // Ultrasonic sensor
+volatile int moisture_max = 200;       // Potentiomiter
+volatile int moisture_multiplier = 1;  // Potentiomiter
+volatile int moisture_offset = 0;      // Potentiomiter
 volatile bool potentiomiters_changing = false;
 
 // Inititalise libraries
@@ -77,14 +77,15 @@ void loop() {
   if (
     is_pot_change_over_threshold(_moisture_multiplier, moisture_multiplier)
     || is_pot_change_over_threshold(_moisture_offset, moisture_offset)
-    || is_pot_change_over_threshold(_mositure_threshold, mositure_threshold)) {
+    || is_pot_change_over_threshold(_mositure_threshold, moisture_max)) {
     potentiomiters_changing = true;
   } else {
     potentiomiters_changing = false;
   }
   moisture_multiplier = _moisture_multiplier;
+  if (moisture_multiplier == 0) moisture_multiplier = 1;
   moisture_offset = _moisture_offset;
-  mositure_threshold = _mositure_threshold;
+  moisture_max = _mositure_threshold;
 
 
   // Check distance on ultrasonic
@@ -113,11 +114,11 @@ void loop() {
       lcd.print(F(" "));
       lcd.print(moisture_offset);
       lcd.print(F(" "));
-      lcd.print(mositure_threshold);
+      lcd.print(moisture_max);
     } else {
 
       // Display message on LCD
-      if (moisture < mositure_threshold) {
+      if (moisture < moisture_max) {
         // LED indicator
         digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
 
@@ -133,21 +134,21 @@ void loop() {
       }
     }
 
-    // Draw the mositure on the bottom line
-    String space = " ";  // This is to make concatenation work
-    String moisture_str = space + moisture;
-    lcd.setCursor(LCD_WIDTH - moisture_str.length(), 1);
+    // Draw the mositure on the right of the top line
+    String moisture_str = String(moisture);
+    lcd.setCursor(LCD_WIDTH - moisture_str.length(), 0);
     lcd.print(moisture);
 
     // Draw the line graph
-    int cells_avaiable = LCD_WIDTH - moisture_str.length();
+    if (moisture >= moisture_offset || moisture <= moisture_max) {
+      float moisture_percentage = (moisture + moisture_offset) / moisture_max;
+      int cells_to_fill = LCD_WIDTH * moisture_percentage;
 
-    int cells_to_fill = mositure_threshold - moisture;
-
-    for (int i = 0; i < cells_avaiable; i++) {
-      lcd.setCursor(i, 1);
-      if (cells_to_fill < i) {
-        lcd.write(GRAPH_SEGMENT);
+      lcd.setCursor(0, 1);
+      for (int i = 0; i < LCD_WIDTH; i++) {
+        if (i < cells_to_fill) {
+          lcd.write(GRAPH_SEGMENT);
+        }
       }
     }
 
@@ -156,7 +157,7 @@ void loop() {
     digitalWrite(NEEDS_WATERING_INDICATOR, LOW);
 
     // Turn off the LCD message
-    lcd.clear();
+    // lcd.clear();
   }
   // Wait for half a second
   delay(500);
