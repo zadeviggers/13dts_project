@@ -15,6 +15,22 @@ const int THRESHOLD_POT = 32;
 
 // Constants
 const int DISTANCE_THRESHOLD = 10;
+const int LCD_WIDTH = 16;
+const int LCD_HEIGHT = 2;
+const int POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 8;
+
+// Custom LCD characters
+byte GRAPH_SEGMENT_SHAPE[8] = {
+  0b11111,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b11111,
+  0b11111
+};
+int GRAPH_SEGMENT = 0;  // Chacter ID
 
 // Variables
 volatile int moisture = 0;              // Moisture sensor
@@ -22,11 +38,11 @@ volatile float distance = 0;            // Ultrasonic sensor
 volatile int mositure_threshold = 200;  // Potentiomiter
 volatile int moisture_multiplier = 1;   // Potentiomiter
 volatile int moisture_offset = 0;       // Potentiomiter
-
+volatile bool potentiomiters_changing = false;
 
 // Inititalise libraries
 UltraSonicDistanceSensor distanceSensor(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO);
-LCD_I2C lcd(0x27, 16, 2);
+LCD_I2C lcd(0x27, LCD_WIDTH, LCD_HEIGHT);
 
 
 void setup() {
@@ -46,13 +62,29 @@ void setup() {
   // Setup LCD
   lcd.begin();
   lcd.noBacklight();
+  lcd.createChar(GRAPH_SEGMENT, GRAPH_SEGMENT_SHAPE);
+}
+
+bool is_pot_change_over_threshold(int a, int b) {
+  return abs(a - b) > POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD;
 }
 
 void loop() {
   // Check potentiomiter values
-  moisture_multiplier = analogRead(SCALE_POT);
-  moisture_offset = analogRead(OFFSET_POT);
-  mositure_threshold = analogRead(THRESHOLD_POT);
+  int _moisture_multiplier = analogRead(SCALE_POT);
+  int _moisture_offset = analogRead(OFFSET_POT);
+  int _mositure_threshold = analogRead(THRESHOLD_POT);
+  if (
+    is_pot_change_over_threshold(_moisture_multiplier, moisture_multiplier)
+    || is_pot_change_over_threshold(_moisture_offset, moisture_offset)
+    || is_pot_change_over_threshold(_mositure_threshold, mositure_threshold)) {
+    potentiomiters_changing = true;
+  } else {
+    potentiomiters_changing = false;
+  }
+  moisture_multiplier = _moisture_multiplier;
+  moisture_offset = _moisture_offset;
+  mositure_threshold = _mositure_threshold;
 
 
   // Check distance on ultrasonic
@@ -72,33 +104,52 @@ void loop() {
 
     // Turn on the LCD backlight
     // lcd.backlight();
+    lcd.clear();
 
-
-    // Display message on LCF
-    if (moisture < mositure_threshold) {
-      // LED indicator
-      digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
-
-      // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-      lcd.clear();
-      lcd.print(F("WATER ME"));
-
-
-      // lcd.print("WATER ME");
+    // If potentiomiters are changing, show them on the screen. Otherwise, show data.
+    if (potentiomiters_changing) {
+      lcd.setCursor(0, 0);
+      lcd.print(moisture_multiplier);
+      lcd.print(F(" "));
+      lcd.print(moisture_offset);
+      lcd.print(F(" "));
+      lcd.print(mositure_threshold);
     } else {
-      // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-      lcd.clear();
-      lcd.print(F("DON'T WATER"));
-      // lcd.print("DON'T WATER");
+
+      // Display message on LCD
+      if (moisture < mositure_threshold) {
+        // LED indicator
+        digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
+
+        // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
+        lcd.print(F("WATER ME"));
+
+
+        // lcd.print("WATER ME");
+      } else {
+        // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
+        lcd.print(F("DON'T WATER"));
+        // lcd.print("DON'T WATER");
+      }
     }
 
+    // Draw the mositure on the bottom line
+    String space = " ";  // This is to make concatenation work
+    String moisture_str = space + moisture;
+    lcd.setCursor(LCD_WIDTH - moisture_str.length(), 1);
     lcd.print(moisture);
-    lcd.setCursor(0, 1);
-    lcd.print(moisture_multiplier);
-    lcd.print(F(" "));
-    lcd.print(moisture_offset);
-    lcd.print(F(" "));
-    lcd.print(mositure_threshold);
+
+    // Draw the line graph
+    int cells_avaiable = LCD_WIDTH - moisture_str.length();
+
+    int cells_to_fill = mositure_threshold - moisture;
+
+    for (int i = 0; i < cells_avaiable; i++) {
+      lcd.setCursor(i, 1);
+      if (cells_to_fill < i) {
+        lcd.write(GRAPH_SEGMENT);
+      }
+    }
 
   } else {
     // turn off the LED
@@ -107,10 +158,6 @@ void loop() {
     // Turn off the LCD message
     lcd.clear();
   }
-
-
-
-
   // Wait for half a second
   delay(500);
 }
