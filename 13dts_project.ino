@@ -70,14 +70,16 @@ void loop() {
   // Check potentiomiter values
   int _moisture_min = analogRead(MOISTURE_OFFSET_POT);
   int _mositure_max = analogRead(MOSITURE_MAX_POT);
+
+  potentiomiters_changing = false;
   if (
-    is_pot_change_over_threshold(_moisture_min, moisture_offset)
-    || is_pot_change_over_threshold(_mositure_max, moisture_max)) {
+    is_pot_change_over_threshold(_moisture_min, moisture_offset)) {
     potentiomiters_changing = true;
     moisture_offset = _moisture_min;
+  }
+  if (is_pot_change_over_threshold(_mositure_max, moisture_max)) {
+    potentiomiters_changing = true;
     moisture_max = _mositure_max;
-  } else {
-    potentiomiters_changing = false;
   }
 
 
@@ -110,8 +112,8 @@ void loop() {
       lcd.setCursor(0, 0);
       lcd.print(moisture_offset);
 
-      // Draw moisture threshold on right
-      lcd.setCursor(LCD_WIDTH - String(moisture_max).length(), 0);
+      // Draw moisture threshold next to offset
+      lcd.setCursor(String(moisture_offset).length() + 1, 0);
       lcd.print(moisture_max);
     } else {
       // Display message on LCD
@@ -120,7 +122,7 @@ void loop() {
         digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
 
         // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        lcd.print(F("Low moisture!"));
+        lcd.print(F("Low moisture"));
 
 
         // lcd.print("WATER ME");
@@ -131,11 +133,9 @@ void loop() {
       }
     }
 
-    // TODO: Change this to middle of bottom line
-    // Draw the mositure on the right of the top line
-    // String moisture_str = String(moisture);
-    // lcd.setCursor(LCD_WIDTH - moisture_str.length(), 0);
-    // lcd.print(moisture);
+    // Display moisture on right
+    lcd.setCursor(LCD_WIDTH - String(moisture).length(), 0);
+    lcd.print(moisture);
 
     // Draw the line graph
     float moisture_percentage = (moisture + moisture_offset) / moisture_max + 1;  // Avoid dividing by zero
@@ -144,6 +144,7 @@ void loop() {
     lcd.setCursor(0, 1);
     for (int i = 0; i < LCD_WIDTH; i++) {
       if (i < cells_to_fill) {
+        // if ()
         lcd.write(GRAPH_SEGMENT);
       }
     }
