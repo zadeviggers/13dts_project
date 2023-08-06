@@ -16,7 +16,7 @@ const int MOISTURE_OFFSET_POT = 33;
 const int DISTANCE_THRESHOLD = 10;
 const int LCD_WIDTH = 16;
 const int LCD_HEIGHT = 2;
-const int POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 8;
+const int POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 10;
 
 // Custom LCD characters
 byte GRAPH_SEGMENT_SHAPE[8] = {
@@ -122,14 +122,13 @@ void loop() {
         digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
 
         // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        lcd.print(F("Low moisture"));
+        lcd.print(F("Too dry"));
 
 
         // lcd.print("WATER ME");
       } else {
         // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        lcd.print(F("Moisture OK"));
-        // lcd.print("DON'T WATER");
+        lcd.print(F("Dampness OK"));
       }
     }
 
