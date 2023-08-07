@@ -128,7 +128,7 @@ void loop() {
         // lcd.print("WATER ME");
       } else {
         // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        lcd.print(F("Dampness OK"));
+        lcd.print(F("Wetness OK"));
       }
     }
 
@@ -139,6 +139,7 @@ void loop() {
     // Draw the line graph
     float moisture_percentage = (moisture + moisture_offset) / moisture_max + 1;  // Avoid dividing by zero
     int cells_to_fill = LCD_WIDTH * moisture_percentage;
+    Serial.println(moisture_percentage);
 
     lcd.setCursor(0, 1);
     for (int i = 0; i < LCD_WIDTH; i++) {
