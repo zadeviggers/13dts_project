@@ -1,35 +1,34 @@
 // Libraries
 #include <HCSR04.h>
-#include <LCD_I2C.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ST7735.h>
+#include <SPI.h>
+
 
 // Pins
+// Moisture
 const int MOISTURE_SENSOR_SIGNAL = 14;
 const int MOISTURE_SENSOR_POWER = 12;
+// LED
 const int NEEDS_WATERING_INDICATOR = 13;
+// Ultrasonic
 const int ULTRASONIC_TRIGGER = 27;
 const int ULTRASONIC_ECHO = 26;
-const int LCD_ADDRESS = 0x27;
+// Potentiomiters
 const int MOSITURE_MAX_POT = 25;
 const int MOISTURE_OFFSET_POT = 33;
+// LCD
+const int TFT_CS = 19;
+const int TFT_RST = 5;
+const int TFT_DC = 18;
+const int TFT_SCLK = 16;
+const int TFT_MOSI = 17;
 
 // Constants
 const int DISTANCE_THRESHOLD = 10;
-const int LCD_WIDTH = 16;
-const int LCD_HEIGHT = 2;
+const int LCD_WIDTH = 128;
+const int LCD_HEIGHT = 160;
 const int POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 15;
-
-// Custom LCD characters
-byte GRAPH_SEGMENT_SHAPE[8] = {
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111,
-  0b11111
-};
-int GRAPH_SEGMENT = 0;  // Chacter ID
 
 // Variables
 volatile int moisture = 0;         // Moisture sensor
@@ -39,8 +38,10 @@ volatile int moisture_offset = 0;  // Potentiomiter
 volatile bool potentiomiters_changing = false;
 
 // Inititalise libraries
+// Ultrasonic
 UltraSonicDistanceSensor distanceSensor(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO);
-LCD_I2C lcd(0x27, LCD_WIDTH, LCD_HEIGHT);
+// LCD
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 
 void setup() {
@@ -57,9 +58,15 @@ void setup() {
   pinMode(MOSITURE_MAX_POT, INPUT);
 
   // Setup LCD
-  lcd.begin();
-  lcd.noBacklight();
-  lcd.createChar(GRAPH_SEGMENT, GRAPH_SEGMENT_SHAPE);
+  tft.initR(INITR_BLACKTAB);
+  tft.fillScreen(ST7735_BLACK);
+
+  tft.setTextColor(ST7735_WHITE);
+  tft.setTextSize(0);
+  tft.setCursor(30, 80);
+  tft.println("Hello World!");
+  tft.getTextBounds()
+  delay(1000);
 }
 
 bool is_pot_change_over_threshold(int a, int b) {
@@ -103,18 +110,18 @@ void loop() {
 
 
     // Turn on the LCD backlight
-    lcd.backlight();
-    lcd.clear();
+    // lcd.backlight();
+    // lcd.clear();
 
     // If potentiomiters are changing, show them on the screen. Otherwise, show data.
     if (potentiomiters_changing) {
       // Draw moisture offset on the left
-      lcd.setCursor(0, 0);
-      lcd.print(moisture_offset);
+      // lcd.setCursor(0, 0);
+      // lcd.print(moisture_offset);
 
       // Draw moisture threshold next to offset
-      lcd.setCursor(String(moisture_offset).length() + 1, 0);
-      lcd.print(moisture_max);
+      // lcd.setCursor(String(moisture_offset).length() + 1, 0);
+      // lcd.print(moisture_max);
     } else {
       // Display message on LCD
       if (computed_moisture < moisture_max) {
@@ -122,30 +129,30 @@ void loop() {
         digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
 
         // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        lcd.print(F("Too dry"));
+        // lcd.print(F("Too dry"));
 
 
         // lcd.print("WATER ME");
       } else {
         // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        lcd.print(F("Wetness OK"));
+        // lcd.print(F("Wetness OK"));
       }
     }
 
     // Display moisture on right
-    lcd.setCursor(LCD_WIDTH - String(moisture).length(), 0);
-    lcd.print(moisture);
+    // lcd.setCursor(LCD_WIDTH - String(moisture).length(), 0);
+    // lcd.print(moisture);
 
     // Draw the line graph
     float moisture_percentage = (moisture + moisture_offset) / moisture_max + 1;  // Avoid dividing by zero
     int cells_to_fill = LCD_WIDTH * moisture_percentage;
     Serial.println(moisture_percentage);
 
-    lcd.setCursor(0, 1);
+    // lcd.setCursor(0, 1);
     for (int i = 0; i < LCD_WIDTH; i++) {
       if (i < cells_to_fill) {
         // if ()
-        lcd.write(GRAPH_SEGMENT);
+        // lcd.write(GRAPH_SEGMENT);
       }
     }
 
