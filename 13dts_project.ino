@@ -62,7 +62,7 @@ void setup() {
   tft.initR(INITR_BLACKTAB);
   tft.setTextColor(ST7735_WHITE);
   tft.fillScreen(ST7735_BLACK);
-  tft.print(F("BEANS"));
+  tft.print(F("Started!"));
 
   delay(1000);
 }
@@ -96,12 +96,10 @@ void loop() {
     // Caculate computed moisture
     int computed_moisture = moisture + moisture_offset;
 
-
-
     // Display message on LCD
     tft.setCursor(0, 0);
     // Characters are 7 pixels high
-    tft.fillRect(0, 0, tft.width(), 7, ST7735_BLACK);
+    tft.fillRect(0, 0, tft.width(), 20, ST7735_BLACK);
     if (computed_moisture < moisture_max) {
       // LED indicator
       digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
@@ -113,27 +111,41 @@ void loop() {
       tft.print(F("Wetness OK"));
     }
 
+    tft.setCursor(0, 10);
+    tft.print("Moisture:" + String(moisture));
+
     // Display moisture on right
     // lcd.setCursor(tft.width() - String(moisture).length(), 0);
     // lcd.print(moisture);
 
     // Draw the line graph
-    float moisture_percentage = (moisture + moisture_offset) / moisture_max + 1;  // Avoid dividing by zero
-    float pixels_wide = tft.height() * moisture_percentage;
-    Serial.println("Moisture_percent:" + String(moisture_percentage));
+    if (moisture_max <= 0) {
+      // If the threshold is 0, just don't draw any line
+      tft.fillRect(0, tft.height() - GRAPH_LINE_HEIGHT, tft.width(), GRAPH_LINE_HEIGHT, ST7735_BLACK);
+    } else {
+      // Otherwise, calcualte stuff
 
-    tft.fillRect(0, tft.height() - GRAPH_LINE_HEIGHT, pixels_wide, GRAPH_LINE_HEIGHT, ST7735_BLUE);
-    // Fill in the old area with black
-    tft.fillRect(pixels_wide, tft.height() - GRAPH_LINE_HEIGHT, tft.width(), GRAPH_LINE_HEIGHT, ST7735_BLACK);
+      Serial.println("Moisture_total:" + String(moisture + moisture_offset));
+      Serial.println("Moisture_offset:" + String(moisture_offset));
+      Serial.println("Moisture_max:" + String(moisture_max));
+      float moisture_percentage = (((moisture + moisture_offset) * 100) / moisture_max);
+      Serial.println("Moisture_percent:" + String(moisture_percentage));
+      int pixels_wide = (tft.width() * moisture_percentage) / 100;
+      Serial.println("Moisture_percent:" + String(pixels_wide));
 
 
-
+      tft.fillRect(0, tft.height() - GRAPH_LINE_HEIGHT, pixels_wide, GRAPH_LINE_HEIGHT, ST7735_BLUE);
+      // Fill in the old area with black
+      tft.fillRect(pixels_wide, tft.height() - GRAPH_LINE_HEIGHT, tft.width(), GRAPH_LINE_HEIGHT, ST7735_BLACK);
+    }
   } else {
     // turn off the LED
     digitalWrite(NEEDS_WATERING_INDICATOR, LOW);
 
     // Turn off the LCD message
-    // lcd.clear();
+    tft.fillRect(0, tft.height() - 20, tft.width(), 20, ST7735_BLACK);
+    tft.setCursor(0, tft.height() - 8);
+    tft.print(F("NO DATA - Move closer"));
   }
 
   int potentiomiter_height = int(tft.height() / 2);
@@ -142,13 +154,13 @@ void loop() {
   // If potentiomiters are changing, show them on the screen. Otherwise, show data.
   // Draw moisture offset on the left
   tft.setCursor(0, potentiomiter_height - 10);
-  tft.print("Offset:");
+  tft.print(F("Offset"));
   tft.setCursor(0, potentiomiter_height);
   tft.print(moisture_offset);
 
   // Draw moisture threshold on right
-  tft.setCursor(tft.width() - (10 * 6) - 1, potentiomiter_height - 10);
-  tft.print("Threshold:");
+  tft.setCursor(tft.width() - (9 * 6) - 1, potentiomiter_height - 10);
+  tft.print(F("Threshold"));
   String moisture_max_str = String(moisture_max);
   // The width of a character is 5 pixels, with a one pixel gap between characters
   tft.setCursor(tft.width() - (moisture_max_str.length() * 6) - 1, potentiomiter_height);
