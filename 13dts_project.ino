@@ -15,7 +15,7 @@ const int NEEDS_WATERING_INDICATOR = 13;
 const int ULTRASONIC_TRIGGER = 27;
 const int ULTRASONIC_ECHO = 26;
 // Potentiomiters
-const int MOSITURE_MAX_POT = 25;
+const int MOISTURE_MAX_POT = 25;
 const int MOISTURE_OFFSET_POT = 33;
 // LCD
 const int TFT_CS = 19;
@@ -26,9 +26,8 @@ const int TFT_MOSI = 17;
 
 // Constants
 const int DISTANCE_THRESHOLD = 10;
-const int LCD_WIDTH = 128;
-const int LCD_HEIGHT = 160;
 const int POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 15;
+const int GRAPH_LINE_HEIGHT = 15;
 
 // Variables
 volatile int moisture = 0;         // Moisture sensor
@@ -55,17 +54,16 @@ void setup() {
   pinMode(NEEDS_WATERING_INDICATOR, OUTPUT);
 
   pinMode(MOISTURE_OFFSET_POT, INPUT);
-  pinMode(MOSITURE_MAX_POT, INPUT);
+  pinMode(MOISTURE_MAX_POT, INPUT);
+
+
 
   // Setup LCD
   tft.initR(INITR_BLACKTAB);
-  tft.fillScreen(ST7735_BLACK);
-
   tft.setTextColor(ST7735_WHITE);
-  tft.setTextSize(0);
-  tft.setCursor(30, 80);
-  tft.println("Hello World!");
-  tft.getTextBounds()
+  tft.fillScreen(ST7735_BLACK);
+  tft.print(F("BEANS"));
+
   delay(1000);
 }
 
@@ -75,24 +73,12 @@ bool is_pot_change_over_threshold(int a, int b) {
 
 void loop() {
   // Check potentiomiter values
-  int _moisture_min = analogRead(MOISTURE_OFFSET_POT);
-  int _mositure_max = analogRead(MOSITURE_MAX_POT);
-
-  potentiomiters_changing = false;
-  if (
-    is_pot_change_over_threshold(_moisture_min, moisture_offset)) {
-    potentiomiters_changing = true;
-    moisture_offset = _moisture_min;
-  }
-  if (is_pot_change_over_threshold(_mositure_max, moisture_max)) {
-    potentiomiters_changing = true;
-    moisture_max = _mositure_max;
-  }
-
-
+  moisture_offset = analogRead(MOISTURE_OFFSET_POT);
+  moisture_max = analogRead(MOISTURE_MAX_POT);
 
   // Check distance on ultrasonic
   distance = distanceSensor.measureDistanceCm();
+  Serial.println("Distance:" + String(distance));
 
   // Check threshold before measing soil mostire to slow corrosion.
   if (distance > 0 && distance < DISTANCE_THRESHOLD) {
@@ -102,6 +88,8 @@ void loop() {
     // Wait for 10 millisecond(s)
     delay(10);
     moisture = analogRead(MOISTURE_SENSOR_SIGNAL);
+    Serial.println("Moisture:" + String(moisture));
+
     // Turn off the sensor to reduce metal corrosion over time
     digitalWrite(MOISTURE_SENSOR_POWER, LOW);
 
@@ -109,52 +97,35 @@ void loop() {
     int computed_moisture = moisture + moisture_offset;
 
 
-    // Turn on the LCD backlight
-    // lcd.backlight();
-    // lcd.clear();
 
-    // If potentiomiters are changing, show them on the screen. Otherwise, show data.
-    if (potentiomiters_changing) {
-      // Draw moisture offset on the left
-      // lcd.setCursor(0, 0);
-      // lcd.print(moisture_offset);
+    // Display message on LCD
+    tft.setCursor(0, 0);
+    // Characters are 7 pixels high
+    tft.fillRect(0, 0, tft.width(), 7, ST7735_BLACK);
+    if (computed_moisture < moisture_max) {
+      // LED indicator
+      digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
 
-      // Draw moisture threshold next to offset
-      // lcd.setCursor(String(moisture_offset).length() + 1, 0);
-      // lcd.print(moisture_max);
+      // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
+      tft.print(F("Too dry"));
     } else {
-      // Display message on LCD
-      if (computed_moisture < moisture_max) {
-        // LED indicator
-        digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
-
-        // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        // lcd.print(F("Too dry"));
-
-
-        // lcd.print("WATER ME");
-      } else {
-        // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
-        // lcd.print(F("Wetness OK"));
-      }
+      // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
+      tft.print(F("Wetness OK"));
     }
 
     // Display moisture on right
-    // lcd.setCursor(LCD_WIDTH - String(moisture).length(), 0);
+    // lcd.setCursor(tft.width() - String(moisture).length(), 0);
     // lcd.print(moisture);
 
     // Draw the line graph
     float moisture_percentage = (moisture + moisture_offset) / moisture_max + 1;  // Avoid dividing by zero
-    int cells_to_fill = LCD_WIDTH * moisture_percentage;
-    Serial.println(moisture_percentage);
+    float pixels_wide = tft.height() * moisture_percentage;
+    Serial.println("Moisture_percent:" + String(moisture_percentage));
 
-    // lcd.setCursor(0, 1);
-    for (int i = 0; i < LCD_WIDTH; i++) {
-      if (i < cells_to_fill) {
-        // if ()
-        // lcd.write(GRAPH_SEGMENT);
-      }
-    }
+    tft.fillRect(0, tft.height() - GRAPH_LINE_HEIGHT, pixels_wide, GRAPH_LINE_HEIGHT, ST7735_BLUE);
+    // Fill in the old area with black
+    tft.fillRect(pixels_wide, tft.height() - GRAPH_LINE_HEIGHT, tft.width(), GRAPH_LINE_HEIGHT, ST7735_BLACK);
+
 
 
   } else {
@@ -164,6 +135,25 @@ void loop() {
     // Turn off the LCD message
     // lcd.clear();
   }
+
+  int potentiomiter_height = int(tft.height() / 2);
+  tft.fillRect(0, potentiomiter_height, tft.width(), 7, ST7735_BLACK);
+
+  // If potentiomiters are changing, show them on the screen. Otherwise, show data.
+  // Draw moisture offset on the left
+  tft.setCursor(0, potentiomiter_height - 10);
+  tft.print("Offset:");
+  tft.setCursor(0, potentiomiter_height);
+  tft.print(moisture_offset);
+
+  // Draw moisture threshold on right
+  tft.setCursor(tft.width() - (10 * 6) - 1, potentiomiter_height - 10);
+  tft.print("Threshold:");
+  String moisture_max_str = String(moisture_max);
+  // The width of a character is 5 pixels, with a one pixel gap between characters
+  tft.setCursor(tft.width() - (moisture_max_str.length() * 6) - 1, potentiomiter_height);
+  tft.print(moisture_max_str);
+
   // Wait for half a second
   delay(500);
 }
