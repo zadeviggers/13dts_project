@@ -124,7 +124,7 @@ void loop() {
 
     // Display moisture
     tft.setCursor(0, 10);
-    tft.print("Moisture:" + String(moisture));x
+    tft.print("Moisture:" + String(moisture));
 
     // Draw the line graph
     if (moisture_max <= 0) {
@@ -167,7 +167,7 @@ void loop() {
   tft.print(moisture_min);
 
   // Draw moisture threshold on right
-  tft.setCursor(tft.width() - 3 * 6) - 1, potentiomiter_height - 10);
+  tft.setCursor(tft.width() - (3 * 6) - 1, potentiomiter_height - 10);
   tft.print(F("Max"));
   String moisture_max_str = String(moisture_max);
   // The width of a character is 5 pixels, with a one pixel gap between characters
