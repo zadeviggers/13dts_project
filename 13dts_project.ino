@@ -28,6 +28,7 @@ const int TFT_MOSI = 17;
 const int DISTANCE_THRESHOLD = 10;
 const int POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 15;
 const int GRAPH_LINE_HEIGHT = 15;
+const int POTENTIOMITER_DIVISOR = 16;
 
 // Variables
 volatile int moisture = 0;        // Moisture sensor
@@ -72,8 +73,8 @@ bool is_pot_change_over_threshold(int a, int b) {
 
 void loop() {
   // Check potentiomiter values
-  moisture_min = analogRead(MOISTURE_MIN_POT);
-  moisture_max = analogRead(MOISTURE_MAX_POT);
+  moisture_min = analogRead(MOISTURE_MIN_POT) / POTENTIOMITER_DIVISOR;
+  moisture_max = analogRead(MOISTURE_MAX_POT) / POTENTIOMITER_DIVISOR;
 
   // Check distance on ultrasonic
   distance = distanceSensor.measureDistanceCm();
