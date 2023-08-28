@@ -142,7 +142,8 @@ void loop() {
       Serial.println("Moisture_total:" + String(moisture + moisture_min));
       Serial.println("Moisture_min:" + String(moisture_min));
       Serial.println("Moisture_max:" + String(moisture_max));
-      float moisture_percentage = ((moisture * 100) / moisture_max);
+      float moisture_target = (moisture_max + moisture_min) / 2;
+      float moisture_percentage = ((moisture * 100) / moisture_target);
       Serial.println("Moisture_percent:" + String(moisture_percentage));
       int pixels_wide = (tft.width() * moisture_percentage) / 100;
       Serial.println("Moisture_percent:" + String(pixels_wide));
