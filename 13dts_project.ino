@@ -25,8 +25,8 @@ const int TFT_SCLK = 16;
 const int TFT_MOSI = 17;
 
 // Constants
-const int DISTANCE_THRESHOLD = 10;
-const int POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 0.5;
+const int DISTANCE_THRESHOLD = 30;
+const float POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 0.5;
 const int GRAPH_LINE_HEIGHT = 15;
 const int POTENTIOMITER_DIVISOR = 4;
 
@@ -99,21 +99,18 @@ void loop() {
     // Turn off the sensor to reduce metal corrosion over time
     digitalWrite(MOISTURE_SENSOR_POWER, LOW);
 
-    // Caculate computed moisture
-    int computed_moisture = moisture + moisture_min;
-
     // Display message on LCD
     tft.setCursor(0, 0);
     // Characters are 7 pixels high
     tft.fillRect(0, 0, tft.width(), 20, ST7735_BLACK);
-    if (computed_moisture < moisture_min) {
+    if (moisture < moisture_min) {
       // LED indicator
       digitalWrite(NEEDS_WATERING_INDICATOR, HIGH);
 
       // Print to LCD. `F()` macro makes the string get stored in flash memory rather than RAM.
       tft.print(F("Too dry - water"));
 
-    } else if (computed_moisture > moisture_max) {
+    } else if (moisture > moisture_max) {
       // LED indicator
       digitalWrite(NEEDS_WATERING_INDICATOR, LOW);
 
