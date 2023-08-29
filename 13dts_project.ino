@@ -28,7 +28,7 @@ const int TFT_MOSI = 17;
 const int DISTANCE_THRESHOLD = 100;
 const float POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD = 0.75;
 const int GRAPH_LINE_HEIGHT = 15;
-const int POTENTIOMITER_DIVISOR = 4;
+const int POTENTIOMITER_DIVISOR = 2;
 
 // Variables
 volatile int moisture = 0;        // Moisture sensor
