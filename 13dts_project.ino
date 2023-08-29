@@ -15,8 +15,8 @@ const int NEEDS_WATERING_INDICATOR = 13;
 const int ULTRASONIC_TRIGGER = 27;
 const int ULTRASONIC_ECHO = 26;
 // Potentiomiters
-const int MOISTURE_MAX_POT = 25;
-const int MOISTURE_MIN_POT = 33;
+const int MOISTURE_MAX_POT = 33;
+const int MOISTURE_MIN_POT = 25;
 // LCD
 const int TFT_CS = 19;
 const int TFT_RST = 5;
@@ -73,8 +73,8 @@ bool is_pot_change_over_threshold(int a, int b) {
 
 void loop() {
   // Check potentiomiter values
-  _moisture_min = analogRead(MOISTURE_MIN_POT) / POTENTIOMITER_DIVISOR;
-  _moisture_max = analogRead(MOISTURE_MAX_POT) / POTENTIOMITER_DIVISOR;
+  int _moisture_min = analogRead(MOISTURE_MIN_POT) / POTENTIOMITER_DIVISOR;
+  int _moisture_max = analogRead(MOISTURE_MAX_POT) / POTENTIOMITER_DIVISOR;
   if (abs(_moisture_min - moisture_min) > POTENTIOMITER_CHANGE_NOT_COUNT_THRESHOLD) {
     moisture_min = _moisture_min;
   }
